@@ -1,0 +1,60 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from pandas.tools.plotting import scatter_matrix
+
+def readTrainFile(url):
+    df = pd.read_csv(url)
+    data = df.iloc[:,1:-4]
+    label = df.iloc[:,-3]
+    '''
+    wave = df.wave
+    wss = df.wss
+    evoa = df.evoa
+    oau = df.oau
+    fiu = df.fiu
+    fib_652 = df.fib_652
+    fib_655 = df.fib_655
+    left = df.left  
+    right = df.right
+    otu_power = df.otu_power
+    OSNR = df.OSNR
+    penalty = df.penalty
+    onsr = df.onsr  
+    #data = pd.concat([wave,otu_power,OSNR,penalty,onsr],axis=1)
+    '''
+    return df,data,label
+
+def readTestFile(url):
+    df = pd.read_csv(url)
+    data = df.iloc[:,1:-1]
+    label = df.iloc[:,-1]
+    '''
+    wave = df.wave
+    wss = df.wss
+    evoa = df.evoa
+    oau = df.oau
+    fiu = df.fiu
+    fib_652 = df.fib_652
+    fib_655 = df.fib_655
+    left = df.left  
+    right = df.right
+    otu_power = df.otu_power
+    OSNR = df.OSNR
+    penalty = df.penalty
+    onsr = df.onsr
+    #data = pd.concat([wave,otu_power,OSNR,penalty,onsr],axis=1)
+    '''
+    return df,data,label
+if __name__ == '__main__':
+    df_train,data_train,label_train = readTrainFile('train_with_expm.csv')
+    df_test,data_test,label_test = readTestFile('fand.csv')
+    print(data_test.describe())   #特征的属性
+    data_test.hist(bins=50,figsize=(20,15))  #特征属性直方图
+    label_test.hist(bins=50,figsize=(20,15)) #标签属性直方图
+    plt.show()
+    corr_matrix = df_train.drop(columns=['Q_phy','cor_term','error']).corr()
+    print(corr_matrix["Q_real"].sort_values(ascending=False))  #特征与标签之间相关性系数，皮尔森系数
+    corr_matrix = df_test.corr()
+    print(abs(corr_matrix["Q_real"]).sort_values(ascending=False))  #特征与标签之间相关性系数，皮尔森系数
+    attributes = ["Q_real","penalty","onsr","wave","OSNR","otu_power"]
+    scatter_matrix(df_test[attributes],figsize=(12,8))
