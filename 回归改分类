@@ -1,0 +1,73 @@
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier,AdaBoostClassifier,GradientBoostingClassifier #随机森林
+from sklearn.tree import DecisionTreeClassifier #决策树
+import xgboost as xgb
+import lightgbm as lgb
+
+def readTrainFile(url):
+    df = pd.read_csv(url)
+    data = df.iloc[:,1:-4]
+    label = df.iloc[:,-3]
+    return df,data,label
+
+def readTestFile(url):
+    df = pd.read_csv(url)
+    data = df.iloc[:,1:-1]
+    label = df.iloc[:,-1]
+    return df,data,label
+
+#回归改分类，打标签
+def makeLabel(label,step=0.5):
+    tag = []
+    for i in label:
+        a = i // step
+        #a = (i // step) - 14  #范围减少到[7,16]
+        tag.append(a)
+    return tag
+
+def DTClassifier(data_train,tag_train):
+    model = DecisionTreeClassifier()
+    model.fit(data_train,tag_train)
+    return model
+
+def rfClassifier(data_train,tag_train):
+    #model = RandomForestClassifier()
+    model = AdaBoostClassifier()
+    #model = GradientBoostingClassifier()
+    model.fit(data_train,tag_train)
+    return model
+
+def xgbClassifier(data_train,tag_train):
+    model = xgb.XGBClassifier()
+    model.fit(data_train,tag_train)
+    return model
+
+def lgbmClassifier(data_train,label_train):
+    model = lgb.LGBMClassifier()
+    model.fit(data_train,tag_train)
+    return model
+    
+def test(model,data_test,tag_test):
+    pred = model.predict(data_test)
+    acc = sum(pred == tag_test) / len(pred)
+    print("测试集总个数",len(pred))
+    print("测试集预测正确的个数",sum(pred == tag_test))
+    print("测试集正确率",acc)
+    print('\n')
+
+    
+if __name__ == '__main__':
+    df_train,data_train,label_train = readTrainFile('train_with_expm.csv')
+    df_test,data_test,label_test = readTestFile('fand.csv')
+    
+    tag_train = np.array(makeLabel(label_train))
+    tag_train = tag_train.reshape(len(tag_train),-1)  #一维数组转二维
+    tag_test = np.array(makeLabel(label_test))
+ 
+    #model = DTClassifier(data_train,tag_train)
+    #model = rfClassifier(data_train,tag_train)
+    model = xgbClassifier(data_train,tag_train)  
+    #model = lgbmClassifier(data_train,tag_train)
+    test(model,data_test,tag_test)
+    
