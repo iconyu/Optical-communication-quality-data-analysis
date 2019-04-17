@@ -1,0 +1,58 @@
+import pandas as pd
+import xgboost as xgb
+import numpy as np
+from sklearn.model_selection import GridSearchCV
+
+def wave_type(file):
+    Data = pd.read_csv(file)
+    wave = Data.loc[:, 'wave']
+    wave = list(set(wave))
+    wave_names = np.sort(wave)
+    wave = np.array(Data.loc[:, 'wave'])
+    otu_power = np.array(Data.loc[:, 'otu_power'])
+    OSNR = np.array(Data.loc[:, 'OSNR'])
+    Q_real = np.array(Data.loc[:, 'Q_real'])
+    df = np.c_[wave, otu_power, OSNR, Q_real]
+    return wave_names, df
+    
+def input_train_data(wave_type, data):
+    train_data = []
+    for i in data:
+        if (i[0] == wave_type or i[0] == (wave_type+5)):
+        #if(41 < i[0]):
+            train_data.append(i)
+    train_data = np.array(train_data)
+    return train_data
+
+def input_test_data(wave_type, data):
+    test_data = []
+    for i in data:
+        if (i[0] == wave_type):
+            test_data.append(i)
+    test_data = np.array(test_data)
+    return test_data
+
+def xgboost(train_data):
+    X_train = train_data[:,:-1]
+    y_train = train_data[:,-1]
+    params_test={
+    'max_depth': [2,3,4],
+    'n_estimators':[85,86,87,88,89,90,91],
+    'learning_rate':[0.01,0.05,0.1]
+    }
+    model = xgb.XGBRegressor(max_depth=3,n_estimators=86,learning_rates=0.1)
+    #model = GridSearchCV(estimator=model, param_grid=params_test, scoring='neg_mean_squared_error', cv=5, verbose=1, n_jobs=4)
+    model.fit(X_train,y_train)
+    #print(model.best_params_)
+    return model
+    
+if __name__ == '__main__':
+    test_names,data_test = wave_type(file = 'fand.csv')
+    train_names,data_train = wave_type(file = 'train_with_expm.csv')
+    for wave_type in test_names:
+        train_data = input_train_data(wave_type,data_train)
+        test_data = input_test_data(wave_type,data_test)
+        model = xgboost(train_data)
+        pred = model.predict(test_data[:,:-1])
+        num = sum(abs(pred-test_data[:,-1]) <= 0.5)
+        print('正确个数',num)
