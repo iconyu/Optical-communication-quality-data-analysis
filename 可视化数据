@@ -1,0 +1,59 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+ 
+def readFile():
+    train = pd.read_csv("train_with_expm1.csv")
+    test = pd.read_csv("fand1.csv")
+    return train,test
+
+def maxMinScalerTrain(train,max_min_scaler):
+    OSNR = train[['OSNR']].apply(max_min_scaler)
+    Q_real = train[['Q_real']].apply(max_min_scaler)
+    otu_power = train[['otu_power']].apply(max_min_scaler)
+    return OSNR,Q_real,onsr,otu_power
+
+def maxMinScalerTest(test,max_min_scaler):
+    OSNR = test[['OSNR']].apply(max_min_scaler)
+    Q_real = test[['Q_real']].apply(max_min_scaler)
+    onsr = test[['onsr']].apply(max_min_scaler)
+    otu_power = test[['otu_power']].apply(max_min_scaler)
+    return OSNR,Q_real,onsr,otu_power
+
+def meanStdScalerTrain(train,mean_std_scaler):
+    OSNR = train[['OSNR']].apply(mean_std_scaler)
+    Q_real = train[['Q_real']].apply(mean_std_scaler)
+    onsr = train[['onsr']].apply(mean_std_scaler)
+    otu_power = train[['otu_power']].apply(mean_std_scaler)
+    return OSNR,Q_real,onsr,otu_power
+
+def meanStdScalerTest(test,mean_std_scaler):
+    OSNR = test[['OSNR']].apply(mean_std_scaler)
+    Q_real = test[['Q_real']].apply(mean_std_scaler)
+    onsr = test[['onsr']].apply(mean_std_scaler)
+    otu_power = test[['otu_power']].apply(mean_std_scaler)
+    return OSNR,Q_real,onsr,otu_power
+
+def draw(OSNR,Q_real,onsr,otu_power,train,test):
+    plt.figure(figsize=(100,15)) 
+    plt.plot(Q_real, color='red', label='Q_real')
+    plt.plot(OSNR, color='skyblue', label='OSNR')
+    plt.plot(onsr, color='green', label='onsr') 
+    plt.plot(otu_power,color='blue', label='otu_power')
+    plt.plot(train['Q_real'], color='red', label='Q_real')
+    plt.plot(test['Q_real'], color='blue', label='Q_real')
+    plt.plot(train['otu_power'], color='red', label='Q_real') 
+    plt.plot(test['otu_power'], color='blue', label='Q_real')
+    plt.plot(train['Q_real'], color='red', label='Q_real')
+    plt.plot(train['OSNR'], color='blue', label='Q_real')
+    plt.show()
+
+if __name__ == "__main__":
+    train,test = readFile()
+    max_min_scaler = lambda x : (x-np.min(x))/(np.max(x)-np.min(x))   #归一化
+    mean_std_scaler = lambda x : (x-np.mean(x))/(np.std(x))  #标准化
+    OSNR,Q_real,onsr,otu_power = maxMinScalerTrain(train,max_min_scaler)
+    OSNR,Q_real,onsr,otu_power = maxMinScalerTest(test,max_min_scaler)
+    OSNR,Q_real,onsr,otu_power = meanStdScalerTrain(train,mean_std_scaler)
+    OSNR,Q_real,onsr,otu_power = meanStdScalerTest(test,mean_std_scaler)
+    draw(OSNR,Q_real,onsr,otu_power,train,test)
