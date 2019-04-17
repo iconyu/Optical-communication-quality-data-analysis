@@ -1,0 +1,106 @@
+import pandas as pd
+import numpy as np
+import xgboost as xgb
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor,AdaBoostRegressor,GradientBoostingRegressor,BaggingRegressor
+from sklearn.model_selection import GridSearchCV
+from sklearn.preprocessing import StandardScaler,MinMaxScaler
+
+def readTrainFile(url):
+    df = pd.read_csv(url)
+    #data = df.iloc[:,1:-4]
+    #print(data)
+    label = df.iloc[:,-3]
+  
+    wave = df.wave
+    wss = df.wss
+    evoa = df.evoa
+    oau = df.oau
+    fiu = df.fiu
+    fib_652 = df.fib_652
+    fib_655 = df.fib_655
+    left = df.left  
+    right = df.right
+    otu_power = df.otu_power
+    OSNR = df.OSNR
+    penalty = df.penalty
+    onsr = df.onsr
+    data = pd.concat([wave,wss,evoa,oau,fiu,fib_652,fib_655,left,right,otu_power,OSNR,penalty,onsr],axis=1)
+    #scaler = StandardScaler()
+    #scaler = MinMaxScaler()
+    #data = scaler.fit_transform(data)
+    #print(data)
+ 
+    return df,data,label
+
+def readTestFile(url):
+    df = pd.read_csv(url)
+    #data = df.iloc[:,1:-1]
+    label = df.iloc[:,-1]
+   
+    wave = df.wave
+    wss = df.wss
+    evoa = df.evoa
+    oau = df.oau
+    fiu = df.fiu
+    fib_652 = df.fib_652
+    fib_655 = df.fib_655
+    left = df.left  
+    right = df.right
+    otu_power = df.otu_power
+    OSNR = df.OSNR
+    penalty = df.penalty
+    onsr = df.onsr
+    data = pd.concat([wave,wss,evoa,oau,fiu,fib_652,fib_655,left,right,otu_power,OSNR,penalty,onsr],axis=1)
+    #print(data)
+    #scaler = StandardScaler()
+    #scaler = MinMaxScaler()
+    #data = scaler.fit_transform(data)
+
+    return df,data,label
+
+#xgb回归
+def xgbRegressor(X_train,y_train):
+    #model = xgb.XGBRegressor(learning_rate=0.09,max_depth=15,n_estimators=90)
+    
+    #网格调参
+    #cv_params = {'n_estimators': [80,90,100,110]}
+    #cv_params = {'max_depth': [1,5,10,15,20]}
+    #cv_params = {'learning_rate': [0.001,0.01,0.05,0.09,0.1]}
+    other_params = {'learning_rate': 0.09, 'n_estimators': 100, 'max_depth': 15}
+
+    model = xgb.XGBRegressor(**other_params)
+    model.fit(X_train,y_train)
+    #optimized_GBM = GridSearchCV(estimator=model, param_grid=cv_params, scoring='r2', cv=5, verbose=1, n_jobs=4)
+    #optimized_GBM.fit(X_train, y_train)
+    #evalute_result = optimized_GBM.grid_scores_
+    #print('每轮迭代运行结果:{0}'.format(evalute_result))
+    #print('参数的最佳取值：{0}'.format(optimized_GBM.best_params_))
+    #print('最佳模型得分:{0}'.format(optimized_GBM.best_score_))
+    
+    return model
+    
+#计算测试集准确率    
+def test(X_test,y_test,model):    
+    pred_y = model.predict(X_test)
+    #print(pred_y)
+    y_test = y_test.values
+    mse = mean_squared_error(y_test,pred_y)
+    rmse = np.sqrt(mse)
+    print("测试集rmse",rmse)
+    acc = sum(abs(pred_y - y_test) <= 0.5) / float(len(y_test))
+    print('测试集满足条件的个数',sum(abs(pred_y - y_test) <= 0.5))
+    print('测试集总个数',float(len(y_test)))
+    print('测试集准确率',acc)
+    
+if __name__ == '__main__':
+    df_train,data_train,label_train = readTrainFile('train_with_expm.csv')
+    df_test,data_test,label_test = readTestFile('fand.csv')
+    
+    #model = xgbRegressor(data_train.iloc[0:915,:],label_train[0:915])
+    #model = xgbRegressor(data_train.iloc[915:,:],label_train[915:])
+    model = xgbRegressor(data_train,label_train)
+    test(data_test,label_test,model)
+
+    
