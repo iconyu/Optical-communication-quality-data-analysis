@@ -1,0 +1,105 @@
+import pandas as pd
+import numpy as np
+import lightgbm as lgb
+from sklearn.model_selection import GridSearchCV
+
+def readTrainFile(url):
+    df = pd.read_csv(url)
+    data = df.iloc[:,1:-4]
+    label = df.iloc[:,-3]
+    return df,data,label
+
+def readTestFile(url):
+    df = pd.read_csv(url)
+    data = df.iloc[:,1:-1]
+    label = df.iloc[:,-1]
+    return df,data,label
+
+def lgbRegressor(data_train,label_train):
+    model = lgb.LGBMRegressor(objective='regression',num_leaves=19,learning_rate=0.001, n_estimators=2944, max_depth=7,metric='rmse',min_child_samples=5,bagging_fraction=0.6,feature_fraction=1.0)
+    #粗调
+    '''
+    params_test={
+    'max_depth': [2,3,4,5,6,7,8,9,10],
+    'num_leaves':[4,8,12,16,20,24,28]
+    }
+    params_test={
+    'max_depth': [7,8,9],
+    'num_leaves':[17,18,19,20,21,22,23]
+    }
+    '''
+    '''
+    params_test={
+    'min_child_samples': [5,10,15,20,25]
+    }
+    params_test={
+    'min_child_samples': [2,3,4,5,6,7,8]
+    }
+    '''
+    '''
+    params_test={
+    'feature_fraction': [0.5, 0.6, 0.7, 0.8, 0.9,1.0],
+    'bagging_fraction': [0.6, 0.7, 0.8, 0.9, 1.0]
+    }
+    '''
+    #model = GridSearchCV(estimator=model, param_grid=params_test, scoring='neg_mean_squared_error', cv=5, verbose=1, n_jobs=4)
+    model.fit(data_train,label_train)
+    #print('最好模型的参数',model.best_params_)
+    #print('模型的分数',model.best_score_)
+    return model
+
+#计算测试集准确率    
+def test(model,X_test,y_test):    
+    pred_y = model.predict(X_test)
+    #print(pred_y)
+    y_test = y_test.values
+    #mse = mean_squared_error(y_test,pred_y)
+    #rmse = np.sqrt(mse)
+    #print("测试集rmse",rmse)
+    acc = sum(abs(pred_y - y_test) <= 0.5) / float(len(y_test))
+    print('测试集满足条件的个数',sum(abs(pred_y - y_test) <= 0.5))
+    print('测试集总个数',float(len(y_test)))
+    print('测试集准确率',acc)
+    
+if __name__ == '__main__':
+    df_train,data_train,label_train = readTrainFile('train_with_expm.csv')
+    df_test,data_test,label_test = readTestFile('fand.csv') 
+    #调参，找到best n_estimators
+    '''
+    params = {
+    'boosting_type': 'gbdt', 
+    'objective': 'regression', 
+
+    'learning_rate': 0.1, 
+    'num_leaves': 50, 
+    'max_depth': 6,
+
+    'subsample': 1, 
+    'colsample_bytree': 1, 
+    }
+    data = lgb.Dataset(data_train, label_train, silent=True)
+    cv_results = lgb.cv(params, data, num_boost_round=1000, nfold=5, stratified=False, shuffle=True, metrics='rmse',early_stopping_rounds=50, verbose_eval=50, show_stdv=True, seed=0)
+    print('best n_estimators:', len(cv_results['rmse-mean']))
+    '''
+    '''
+    params = {
+    'boosting_type': 'gbdt', 
+    'objective': 'regression', 
+
+    'learning_rate': 0.0005, 
+    'num_leaves': 19, 
+    'max_depth': 7,
+    'min_data_in_leaf': 5,
+
+    'subsample': 0.6, 
+    'colsample_bytree': 1.0, 
+    }
+    data_train = lgb.Dataset(data_train, label_train, silent=True)
+    cv_results = lgb.cv(params, data_train, num_boost_round=10000, nfold=5, stratified=False, shuffle=True, metrics='rmse',early_stopping_rounds=50, verbose_eval=100, show_stdv=True)
+    print('best n_estimators:', len(cv_results['rmse-mean']))
+    print('best cv score:', cv_results['rmse-mean'][-1])
+    '''
+    model = lgbRegressor(data_train,label_train)
+    #testVal(label_val,pred)
+    test(model,data_test,label_test)
+    
